@@ -75,8 +75,6 @@ class ViewController: UIViewController {
         }
     }
     
-    
-    
     func showSetting() {
         // 显示设置视图
     }
