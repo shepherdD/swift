@@ -11,13 +11,11 @@ import UIKit
 class ViewController: UIViewController {
 
     var mainView: UIView!
-    var mainLb1: UILabel!
-    var mainLb2: UILabel!
+    var mainLb: UILabel!
+    var mainBg: UIImageView!
     var settingView: SettingView!
-    var labelArr: NSMutableArray = []
-    var currentFrame: CGRect = CGRect.init()
-    var behindFrame: CGRect = CGRect.init()
-    
+    var gitImages = [UIImage]()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.initUI();
@@ -25,6 +23,7 @@ class ViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super .viewDidAppear(animated)
+//        self.startBgAnim()
         self.startAnim()
     }
     
@@ -33,61 +32,81 @@ class ViewController: UIViewController {
         self.mainView = UIView.init(frame: CGRect.init(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.height))
         self.view.addSubview(self.mainView)
         self.mainView.backgroundColor = UIColor.black
+        self.mainBg = UIImageView.init(frame: self.mainView.bounds)
+        self.mainView.addSubview(self.mainBg)
         // 初始化跑马灯视图
-        self.mainLb1 = UILabel.init(frame: CGRect.init(x: UIScreen.main.bounds.size.width, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.height))
-        self.mainLb2 = UILabel.init(frame: CGRect.init(x: UIScreen.main.bounds.size.width, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.height))
-        self.mainView.addSubview(self.mainLb1)
-        self.mainView.addSubview(self.mainLb2)
+        self.mainLb = UILabel.init(frame: CGRect.init(x: UIScreen.main.bounds.size.width, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.height))
+        self.mainView.addSubview(self.mainLb)
         self.setContentFont(font: UIFont.boldSystemFont(ofSize: 180))
         self.setContentText(text: "Call")
         self.setContentColor(color: UIColor.white)
-        currentFrame = self.mainLb1.frame
-        behindFrame = self.mainLb2.frame
-        labelArr.add(self.mainLb1)
-        labelArr.add(self.mainLb2)
     }
     
     func setContentFont(font: UIFont) {
-        self.mainLb1.font = font
-        self.mainLb2.font = font
+        self.mainLb.font = font
     }
     
     func setContentText(text: String) {
-        self.mainLb1.text = text
-        self.mainLb2.text = text
-        self.mainLb1.sizeToFit()
-        self.mainLb1.frame = CGRect.init(x: 0, y: 0, width: self.mainLb1.frame.size.width, height: UIScreen.main.bounds.size.height)
-        self.mainLb2.sizeToFit()
-        self.mainLb2.frame = CGRect.init(x: self.mainLb1.frame.origin.x+self.mainLb1.frame.size.width, y: 0, width: self.mainLb2.frame.size.width, height: UIScreen.main.bounds.size.height)
+        var newStr = text
+        for _ in 0...20 {
+            newStr = newStr + text + " "
+        }
+        self.mainLb.text = newStr
+        self.mainLb.sizeToFit()
+        self.mainLb.frame = CGRect.init(x: UIScreen.main.bounds.size.width, y: 0, width: self.mainLb.frame.size.width, height: UIScreen.main.bounds.size.height)
     }
     
     func setContentColor(color: UIColor) {
-        self.mainLb1.textColor = color;
-        self.mainLb2.textColor = color;
+        self.mainLb.textColor = color;
     }
     
     func startAnim() {
-        UIView.animate(withDuration: 3, delay: 0, options: UIView.AnimationOptions.curveLinear, animations: {
-            let label1: UILabel = self.labelArr[0] as! UILabel
-            let label2: UILabel = self.labelArr[1] as! UILabel
-            let offset = self.currentFrame.size.width
-            label1.transform = CGAffineTransform.init(translationX: -offset, y: 0)
-            label2.transform = CGAffineTransform.init(translationX: -offset, y: 0)
-        }) { (void) in
-            let label1: UILabel = self.labelArr[0] as! UILabel
-            let label2: UILabel = self.labelArr[1] as! UILabel
-            label1.transform = CGAffineTransform.identity
-            label1.frame = self.behindFrame
-            label2.transform = CGAffineTransform.identity
-            label2.frame = self.currentFrame
-            self.labelArr.replaceObject(at: 1, with: label1)
-            self.labelArr.replaceObject(at: 0, with: label2)
-            self.startAnim()
+        
+        let totalW = self.mainLb.frame.size.width + UIScreen.main.bounds.width
+        let duration: TimeInterval = TimeInterval(totalW / (UIScreen.main.bounds.width/3))
+        
+        UIView.animate(withDuration: duration, delay: 0, options: UIView.AnimationOptions.curveLinear, animations: {
+            self.mainLb.transform = CGAffineTransform.init(translationX: -totalW, y: 0)
+        }) { (flag) in
+            if flag {
+                self.mainLb.transform = CGAffineTransform.identity
+                self.startAnim()
+            }
         }
     }
+    
+    
     
     func showSetting() {
         // 显示设置视图
     }
 }
 
+extension ViewController {
+    func startBgAnim() {
+        guard let path = Bundle.main.path(forResource: "1.GIF", ofType: nil) else { return }
+        guard let data = NSData(contentsOfFile: path) else { return }
+        guard let imageSource = CGImageSourceCreateWithData(data, nil) else { return }
+        let imageCount = CGImageSourceGetCount(imageSource)
+        
+        var images = [UIImage]()
+        var totalDuration : TimeInterval = 0
+        for i in 0..<imageCount {
+            guard let cgImage = CGImageSourceCreateImageAtIndex(imageSource, i, nil) else { continue }
+            let image = UIImage(cgImage: cgImage)
+            if i == 0 {
+                self.mainBg.image = image
+            }
+            images.append(image)
+            guard let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, i, nil) else { continue }
+            guard let gifDict = (properties as NSDictionary)[kCGImagePropertyGIFDictionary] as? NSDictionary else { continue }
+            guard let frameDuration = gifDict[kCGImagePropertyGIFDelayTime] as? NSNumber else { continue }
+            totalDuration += frameDuration.doubleValue
+        }
+        
+        self.mainBg.animationImages = images
+        self.mainBg.animationDuration = totalDuration
+        self.mainBg.animationRepeatCount = 0
+        self.mainBg.startAnimating()
+    }
+}
